@@ -50,7 +50,7 @@ public class RNFirebaseAdMobBanner extends SimpleViewManager<ReactViewGroup> {
 
     AdView adView = new AdView(context);
     viewGroup.addView(adView);
-    setAdListener();
+    setAdListener(1);  // choi200428 modi(1 추가)
 
     return viewGroup;
   }
@@ -62,14 +62,14 @@ public class RNFirebaseAdMobBanner extends SimpleViewManager<ReactViewGroup> {
   /**
    * Remove the inner AdView and set a new one
    */
-  private void resetAdView() {
+  private void resetAdView(Integer bUse) {  // choi200428 modi(add bUse)
     AdView oldAdView = getAdView();
     AdView newAdView = new AdView(context);
 
     viewGroup.removeViewAt(0);
     if (oldAdView != null) oldAdView.destroy();
     viewGroup.addView(newAdView);
-    setAdListener();
+    setAdListener(bUse);  // choi200428 modi(bUse 추가)
   }
 
   /**
@@ -149,7 +149,7 @@ public class RNFirebaseAdMobBanner extends SimpleViewManager<ReactViewGroup> {
 
     // If the banner has already been requested, reset it
     if (requested) {
-      resetAdView();
+      resetAdView((size==AdSize.BANNER) ? 0 : 1); //resetAdView();  choi200428 modi
     }
 
     AdView adView = getAdView();
@@ -164,58 +164,63 @@ public class RNFirebaseAdMobBanner extends SimpleViewManager<ReactViewGroup> {
   /**
    * Listen to Ad events
    */
-  private void setAdListener() {
+  private void setAdListener(Integer exists) { // choi200428 modi(int exists 추가)
     final AdView adView = getAdView();
 
-    adView.setAdListener(new AdListener() {
-      @Override
-      public void onAdLoaded() {
-        int left = adView.getLeft();
-        int top = adView.getTop();
+    if (exists == 1) { // choi200428 add line
+      adView.setAdListener(new AdListener() {
+        @Override
+        public void onAdLoaded() {
+          int left = adView.getLeft();
+          int top = adView.getTop();
 
-        int width = adView
-          .getAdSize()
-          .getWidthInPixels(context);
-        int height = adView
-          .getAdSize()
-          .getHeightInPixels(context);
+          int width = adView
+            .getAdSize()
+            .getWidthInPixels(context);
+          int height = adView
+            .getAdSize()
+            .getHeightInPixels(context);
 
-        adView.measure(width, height);
-        adView.layout(left, top, left + width, top + height);
+          adView.measure(width, height);
+          adView.layout(left, top, left + width, top + height);
 
-        WritableMap payload = Arguments.createMap();
+          WritableMap payload = Arguments.createMap();
 
-        payload.putBoolean(
-          RNFirebaseAdMobNativeExpress.Events.EVENT_AD_VIDEO_CONTENT.toString(),
-          false
-        );
-        payload.putInt("width", width);
-        payload.putInt("height", height);
+          payload.putBoolean(
+            RNFirebaseAdMobNativeExpress.Events.EVENT_AD_VIDEO_CONTENT.toString(),
+            false
+          );
+          payload.putInt("width", width);
+          payload.putInt("height", height);
 
-        sendEvent(Events.EVENT_AD_LOADED.toString(), payload);
-      }
+          sendEvent(Events.EVENT_AD_LOADED.toString(), payload);
+        }
 
-      @Override
-      public void onAdFailedToLoad(int errorCode) {
-        WritableMap payload = RNFirebaseAdMobUtils.errorCodeToMap(errorCode);
-        sendEvent(Events.EVENT_AD_FAILED_TO_LOAD.toString(), payload);
-      }
+        @Override
+        public void onAdFailedToLoad(int errorCode) {
+          WritableMap payload = RNFirebaseAdMobUtils.errorCodeToMap(errorCode);
+          sendEvent(Events.EVENT_AD_FAILED_TO_LOAD.toString(), payload);
+        }
 
-      @Override
-      public void onAdOpened() {
-        sendEvent(Events.EVENT_AD_OPENED.toString(), null);
-      }
+        @Override
+        public void onAdOpened() {
+          sendEvent(Events.EVENT_AD_OPENED.toString(), null);
+        }
 
-      @Override
-      public void onAdClosed() {
-        sendEvent(Events.EVENT_AD_CLOSED.toString(), null);
-      }
+        @Override
+        public void onAdClosed() {
+          sendEvent(Events.EVENT_AD_CLOSED.toString(), null);
+        }
 
-      @Override
-      public void onAdLeftApplication() {
-        sendEvent(Events.EVENT_AD_LEFT_APPLICATION.toString(), null);
-      }
-    });
+        @Override
+        public void onAdLeftApplication() {
+          sendEvent(Events.EVENT_AD_LEFT_APPLICATION.toString(), null);
+        }
+      });
+    } // choi200428 add line
+    else { // choi200428 add block
+      adView.setAdListener(null);
+    }
   }
 
   /**
